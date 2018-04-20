@@ -4,6 +4,7 @@ import "fmt"
 
 // API documentation https://www.packet.net/developers/api/organizations/
 const organizationBasePath = "/organizations"
+const organizationProjectBasePath = "/projects"
 
 // OrganizationService interface defines available organization methods
 type OrganizationService interface {
@@ -13,6 +14,7 @@ type OrganizationService interface {
 	Update(string, *OrganizationUpdateRequest) (*Organization, *Response, error)
 	Delete(string) (*Response, error)
 	ListPaymentMethods(string) ([]PaymentMethod, *Response, error)
+	CreateOrganizationProject(organizationID string, createRequest *OrganizationProjectCreateRequest) (*Project, *Response, error)
 }
 
 type organizationsRoot struct {
@@ -56,6 +58,16 @@ type OrganizationCreateRequest struct {
 
 func (o OrganizationCreateRequest) String() string {
 	return Stringify(o)
+}
+
+// OrganizationProjectCreateRequest type used to create a Packet project within an Organization
+type OrganizationProjectCreateRequest struct {
+	Name            string `json:"name"`
+	PaymentMethodID string `json:"payment_method_id,omitempty"`
+}
+
+func (p OrganizationProjectCreateRequest) String() string {
+	return Stringify(p)
 }
 
 // OrganizationUpdateRequest type used to update a Packet organization
@@ -144,4 +156,17 @@ func (s *OrganizationServiceOp) ListPaymentMethods(organizationID string) ([]Pay
 	}
 
 	return root.PaymentMethods, resp, err
+}
+
+// CreateOrganizationProject creates a Project within an organization
+func (s *OrganizationServiceOp) CreateOrganizationProject(organizationID string, createRequest *OrganizationProjectCreateRequest) (*Project, *Response, error) {
+	url := fmt.Sprintf("%s/%s%s", organizationBasePath, organizationID, organizationProjectBasePath)
+	project := new(Project)
+
+	resp, err := s.client.DoRequest("POST", url, createRequest, project)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return project, resp, err
 }
